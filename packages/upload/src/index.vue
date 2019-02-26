@@ -140,7 +140,7 @@ export default {
       immediate: true,
       handler(fileList) {
         this.uploadFiles = fileList.map(item => {
-          item.uid = item.uid || Date.now() + this.tempIndex++;
+          item.uid = item.uid || (Date.now() + this.tempIndex++);
           item.status = item.status || 'success';
           return item;
         });
@@ -251,8 +251,7 @@ export default {
         props: {
           'default-file-list': 'default-file-list is renamed to file-list.',
           'show-upload-list': 'show-upload-list is renamed to show-file-list.',
-          'thumbnail-mode':
-            'thumbnail-mode has been deprecated, you can implement the same effect according to this case: http://element.eleme.io/#/zh-CN/component/upload#yong-hu-tou-xiang-shang-chuan'
+          'thumbnail-mode': 'thumbnail-mode has been deprecated, you can implement the same effect according to this case: http://element.eleme.io/#/zh-CN/component/upload#yong-hu-tou-xiang-shang-chuan'
         }
       };
     }
@@ -276,8 +275,8 @@ export default {
           listType={this.listType}
           files={this.uploadFiles}
           on-remove={this.handleRemove}
-          handlePreview={this.onPreview}
-        />
+          handlePreview={this.onPreview}>
+        </UploadList>
       );
     }
 
@@ -311,20 +310,18 @@ export default {
     };
 
     const trigger = this.$slots.trigger || this.$slots.default;
-    let uploadComponent = <upload {...uploadData}>{trigger}</upload>;
-    // 如果当前文件数量大于等于最大值，隐藏上传按钮
-    if (this.limit && this.uploadFiles.length >= this.limit) {
-      uploadComponent = null;
-    }
+    const uploadComponent = <upload {...uploadData}>{trigger}</upload>;
 
     return (
       <div>
-        {this.listType === 'picture-card' ? uploadList : ''}
-        {this.$slots.trigger
-          ? [uploadComponent, this.$slots.default]
-          : uploadComponent}
+        { this.listType === 'picture-card' ? uploadList : ''}
+        {
+          this.$slots.trigger
+            ? [uploadComponent, this.$slots.default]
+            : uploadComponent
+        }
         {this.$slots.tip}
-        {this.listType !== 'picture-card' ? uploadList : ''}
+        { this.listType !== 'picture-card' ? uploadList : ''}
       </div>
     );
   }
