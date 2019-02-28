@@ -240,11 +240,11 @@ export default {
       const value = item[this.valueKey];
       this.$emit('input', value);
       this.$emit('select', item);
-      this.$emit('blur');
-      this.$emit('change', value);
       this.$nextTick(_ => {
         this.suggestions = [];
         this.highlightedIndex = -1;
+        this.$emit('blur');
+        this.$emit('change', value);
       });
     },
     highlight(index) {
