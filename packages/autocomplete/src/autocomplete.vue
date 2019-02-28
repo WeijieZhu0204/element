@@ -10,10 +10,11 @@
     <el-input
       ref="input"
       v-bind="[$props, $attrs]"
-      @input="handleChange"
+      @input="handleInput"
       @focus="handleFocus"
       @blur="handleBlur"
       @clear="handleClear"
+      @change="handleChange"
       @keydown.up.native.prevent="highlight(highlightedIndex - 1)"
       @keydown.down.native.prevent="highlight(highlightedIndex + 1)"
       @keydown.enter.native="handleKeyEnter"
@@ -189,7 +190,7 @@ export default {
         }
       });
     },
-    handleChange(value) {
+    handleInput(value) {
       this.$emit('input', value);
       this.suggestionDisabled = false;
       if (!this.triggerOnFocus && !value) {
@@ -198,6 +199,9 @@ export default {
         return;
       }
       this.debouncedGetData(value);
+    },
+    handleChange(value) {
+      this.$emit('change', value);
     },
     handleFocus(event) {
       this.activated = true;
@@ -233,8 +237,11 @@ export default {
       }
     },
     select(item) {
-      this.$emit('input', item[this.valueKey]);
+      const value = item[this.valueKey];
+      this.$emit('input', value);
       this.$emit('select', item);
+      this.$emit('blur');
+      this.$emit('change', value);
       this.$nextTick(_ => {
         this.suggestions = [];
         this.highlightedIndex = -1;
