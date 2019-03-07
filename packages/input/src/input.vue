@@ -1,5 +1,6 @@
 <template>
-  <div :class="[
+  <div
+    :class="[
     type === 'textarea' ? 'el-textarea' : 'el-input',
     inputSize ? 'el-input--' + inputSize : '',
     {
@@ -42,32 +43,25 @@
       <!-- 前置内容 -->
       <span class="el-input__prefix" v-if="$slots.prefix || prefixIcon">
         <slot name="prefix"></slot>
-        <i class="el-input__icon"
-           v-if="prefixIcon"
-           :class="prefixIcon">
-        </i>
+        <i class="el-input__icon" v-if="prefixIcon" :class="prefixIcon"></i>
       </span>
       <!-- 后置内容 -->
       <span
         class="el-input__suffix"
-        v-if="$slots.suffix || suffixIcon || showClear || validateState && needStatusIcon">
+        v-if="$slots.suffix || suffixIcon || showClear || validateState && needStatusIcon"
+      >
         <span class="el-input__suffix-inner">
           <template v-if="!showClear">
             <slot name="suffix"></slot>
-            <i class="el-input__icon"
-              v-if="suffixIcon"
-              :class="suffixIcon">
-            </i>
+            <i class="el-input__icon" v-if="suffixIcon" :class="suffixIcon"></i>
           </template>
-          <i v-else
-            class="el-input__icon el-icon-circle-close el-input__clear"
-            @click="clear"
-          ></i>
+          <i v-else class="el-input__icon el-icon-circle-close el-input__clear" @click="clear"></i>
         </span>
-        <i class="el-input__icon"
+        <i
+          class="el-input__icon"
           v-if="validateState"
-          :class="['el-input__validateIcon', validateIcon]">
-        </i>
+          :class="['el-input__validateIcon', validateIcon]"
+        ></i>
       </span>
       <!-- 后置元素 -->
       <div class="el-input-group__append" v-if="$slots.append">
@@ -93,249 +87,269 @@
       @blur="handleBlur"
       @change="handleChange"
       :aria-label="label"
-    >
-    </textarea>
+    ></textarea>
   </div>
 </template>
 <script>
-  import emitter from 'element-ui/src/mixins/emitter';
-  import Migrating from 'element-ui/src/mixins/migrating';
-  import calcTextareaHeight from './calcTextareaHeight';
-  import merge from 'element-ui/src/utils/merge';
+import emitter from 'element-ui/src/mixins/emitter';
+import Migrating from 'element-ui/src/mixins/migrating';
+import calcTextareaHeight from './calcTextareaHeight';
+import merge from 'element-ui/src/utils/merge';
 
-  export default {
-    name: 'ElInput',
+export default {
+  name: 'ElInput',
 
-    componentName: 'ElInput',
+  componentName: 'ElInput',
 
-    mixins: [emitter, Migrating],
+  mixins: [emitter, Migrating],
 
-    inheritAttrs: false,
+  inheritAttrs: false,
 
-    inject: {
-      elForm: {
-        default: ''
-      },
-      elFormItem: {
-        default: ''
+  inject: {
+    elForm: {
+      default: ''
+    },
+    elFormItem: {
+      default: ''
+    }
+  },
+
+  data() {
+    return {
+      textareaCalcStyle: {},
+      hovering: false,
+      focused: false,
+      isOnComposition: false
+    };
+  },
+
+  props: {
+    value: [String, Number],
+    size: String,
+    resize: String,
+    form: String,
+    disabled: Boolean,
+    readonly: Boolean,
+    autofocus: Boolean,
+    type: {
+      type: String,
+      default: 'text'
+    },
+    autosize: {
+      type: [Boolean, Object],
+      default: false
+    },
+    autocomplete: {
+      type: String,
+      default: 'off'
+    },
+    /** @Deprecated in next major version */
+    autoComplete: {
+      type: String,
+      validator(val) {
+        process.env.NODE_ENV !== 'production' &&
+          console.warn(
+            "[Element Warn][Input]'auto-complete' property will be deprecated in next major version. please use 'autocomplete' instead."
+          );
+        return true;
       }
     },
+    validateEvent: {
+      type: Boolean,
+      default: true
+    },
+    suffixIcon: String,
+    prefixIcon: String,
+    label: String,
+    clearable: {
+      type: Boolean,
+      default: false
+    },
+    tabindex: String
+  },
 
-    data() {
+  computed: {
+    _elFormItemSize() {
+      return (this.elFormItem || {}).elFormItemSize;
+    },
+    validateState() {
+      return this.elFormItem ? this.elFormItem.validateState : '';
+    },
+    needStatusIcon() {
+      return this.elForm ? this.elForm.statusIcon : false;
+    },
+    validateIcon() {
       return {
-        textareaCalcStyle: {},
-        hovering: false,
-        focused: false,
-        isOnComposition: false
+        validating: 'el-icon-loading',
+        success: 'el-icon-circle-check',
+        error: 'el-icon-circle-close'
+      }[this.validateState];
+    },
+    textareaStyle() {
+      return merge({}, this.textareaCalcStyle, { resize: this.resize });
+    },
+    inputSize() {
+      return this.size || this._elFormItemSize || (this.$ELEMENT || {}).size;
+    },
+    inputDisabled() {
+      return this.disabled || (this.elForm || {}).disabled;
+    },
+    nativeInputValue() {
+      return this.value === null || this.value === undefined ? '' : this.value;
+    },
+    showClear() {
+      return (
+        this.clearable &&
+        !this.inputDisabled &&
+        !this.readonly &&
+        this.nativeInputValue &&
+        (this.focused || this.hovering)
+      );
+    }
+  },
+
+  watch: {
+    value(val) {
+      this.$nextTick(this.resizeTextarea);
+      if (this.validateEvent) {
+        this.dispatch('ElFormItem', 'el.form.change', [val]);
+      }
+    }
+  },
+
+  methods: {
+    focus() {
+      (this.$refs.input || this.$refs.textarea).focus();
+    },
+    blur() {
+      (this.$refs.input || this.$refs.textarea).blur();
+    },
+    getMigratingConfig() {
+      return {
+        props: {
+          icon: 'icon is removed, use suffix-icon / prefix-icon instead.',
+          'on-icon-click': 'on-icon-click is removed.'
+        },
+        events: {
+          click: 'click is removed.'
+        }
       };
     },
-
-    props: {
-      value: [String, Number],
-      size: String,
-      resize: String,
-      form: String,
-      disabled: Boolean,
-      readonly: Boolean,
-      type: {
-        type: String,
-        default: 'text'
-      },
-      autosize: {
-        type: [Boolean, Object],
-        default: false
-      },
-      autocomplete: {
-        type: String,
-        default: 'off'
-      },
-      /** @Deprecated in next major version */
-      autoComplete: {
-        type: String,
-        validator(val) {
-          process.env.NODE_ENV !== 'production' &&
-            console.warn('[Element Warn][Input]\'auto-complete\' property will be deprecated in next major version. please use \'autocomplete\' instead.');
-          return true;
-        }
-      },
-      validateEvent: {
-        type: Boolean,
-        default: true
-      },
-      suffixIcon: String,
-      prefixIcon: String,
-      label: String,
-      clearable: {
-        type: Boolean,
-        default: false
-      },
-      tabindex: String
-    },
-
-    computed: {
-      _elFormItemSize() {
-        return (this.elFormItem || {}).elFormItemSize;
-      },
-      validateState() {
-        return this.elFormItem ? this.elFormItem.validateState : '';
-      },
-      needStatusIcon() {
-        return this.elForm ? this.elForm.statusIcon : false;
-      },
-      validateIcon() {
-        return {
-          validating: 'el-icon-loading',
-          success: 'el-icon-circle-check',
-          error: 'el-icon-circle-close'
-        }[this.validateState];
-      },
-      textareaStyle() {
-        return merge({}, this.textareaCalcStyle, { resize: this.resize });
-      },
-      inputSize() {
-        return this.size || this._elFormItemSize || (this.$ELEMENT || {}).size;
-      },
-      inputDisabled() {
-        return this.disabled || (this.elForm || {}).disabled;
-      },
-      nativeInputValue() {
-        return this.value === null || this.value === undefined ? '' : this.value;
-      },
-      showClear() {
-        return this.clearable &&
-          !this.inputDisabled &&
-          !this.readonly &&
-          this.nativeInputValue &&
-          (this.focused || this.hovering);
+    handleBlur(event) {
+      this.focused = false;
+      this.$emit('blur', event);
+      if (this.validateEvent) {
+        this.dispatch('ElFormItem', 'el.form.blur', [this.value]);
       }
     },
-
-    watch: {
-      value(val) {
-        this.$nextTick(this.resizeTextarea);
-        if (this.validateEvent) {
-          this.dispatch('ElFormItem', 'el.form.change', [val]);
-        }
-      }
+    select() {
+      (this.$refs.input || this.$refs.textarea).select();
     },
-
-    methods: {
-      focus() {
-        (this.$refs.input || this.$refs.textarea).focus();
-      },
-      blur() {
-        (this.$refs.input || this.$refs.textarea).blur();
-      },
-      getMigratingConfig() {
-        return {
-          props: {
-            'icon': 'icon is removed, use suffix-icon / prefix-icon instead.',
-            'on-icon-click': 'on-icon-click is removed.'
-          },
-          events: {
-            'click': 'click is removed.'
-          }
+    resizeTextarea() {
+      if (this.$isServer) return;
+      const { autosize, type } = this;
+      if (type !== 'textarea') return;
+      if (!autosize) {
+        this.textareaCalcStyle = {
+          minHeight: calcTextareaHeight(this.$refs.textarea).minHeight
         };
-      },
-      handleBlur(event) {
-        this.focused = false;
-        this.$emit('blur', event);
-        if (this.validateEvent) {
-          this.dispatch('ElFormItem', 'el.form.blur', [this.value]);
-        }
-      },
-      select() {
-        (this.$refs.input || this.$refs.textarea).select();
-      },
-      resizeTextarea() {
-        if (this.$isServer) return;
-        const { autosize, type } = this;
-        if (type !== 'textarea') return;
-        if (!autosize) {
-          this.textareaCalcStyle = {
-            minHeight: calcTextareaHeight(this.$refs.textarea).minHeight
-          };
-          return;
-        }
-        const minRows = autosize.minRows;
-        const maxRows = autosize.maxRows;
+        return;
+      }
+      const minRows = autosize.minRows;
+      const maxRows = autosize.maxRows;
 
-        this.textareaCalcStyle = calcTextareaHeight(this.$refs.textarea, minRows, maxRows);
-      },
-      handleFocus(event) {
-        this.focused = true;
-        this.$emit('focus', event);
-      },
-      handleComposition(event) {
-        if (event.type === 'compositionstart') {
-          this.isOnComposition = true;
-        }
-        if (event.type === 'compositionend') {
-          this.isOnComposition = false;
-          this.handleInput(event);
-        }
-      },
-      handleInput(event) {
-        if (this.isOnComposition) return;
-
-        // hack for https://github.com/ElemeFE/element/issues/8548
-        // should remove the following line when we don't support IE
-        if (event.target.value === this.nativeInputValue) return;
-
-        this.$emit('input', event.target.value);
-
-        // set input's value, in case parent refuses the change
-        // see: https://github.com/ElemeFE/element/issues/12850
-        this.$nextTick(() => { this.$refs.input.value = this.value; });
-      },
-      handleChange(event) {
-        this.$emit('change', event.target.value);
-      },
-      calcIconOffset(place) {
-        let elList = [].slice.call(this.$el.querySelectorAll(`.el-input__${place}`) || []);
-        if (!elList.length) return;
-        let el = null;
-        for (let i = 0; i < elList.length; i++) {
-          if (elList[i].parentNode === this.$el) {
-            el = elList[i];
-            break;
-          }
-        }
-        if (!el) return;
-        const pendantMap = {
-          suffix: 'append',
-          prefix: 'prepend'
-        };
-
-        const pendant = pendantMap[place];
-        if (this.$slots[pendant]) {
-          el.style.transform = `translateX(${place === 'suffix' ? '-' : ''}${this.$el.querySelector(`.el-input-group__${pendant}`).offsetWidth}px)`;
-        } else {
-          el.removeAttribute('style');
-        }
-      },
-      updateIconOffset() {
-        this.calcIconOffset('prefix');
-        this.calcIconOffset('suffix');
-      },
-      clear() {
-        this.$emit('input', '');
-        this.$emit('change', '');
-        this.$emit('clear');
+      this.textareaCalcStyle = calcTextareaHeight(
+        this.$refs.textarea,
+        minRows,
+        maxRows
+      );
+    },
+    handleFocus(event) {
+      this.focused = true;
+      this.$emit('focus', event);
+    },
+    handleComposition(event) {
+      if (event.type === 'compositionstart') {
+        this.isOnComposition = true;
+      }
+      if (event.type === 'compositionend') {
+        this.isOnComposition = false;
+        this.handleInput(event);
       }
     },
+    handleInput(event) {
+      if (this.isOnComposition) return;
 
-    created() {
-      this.$on('inputSelect', this.select);
+      // hack for https://github.com/ElemeFE/element/issues/8548
+      // should remove the following line when we don't support IE
+      if (event.target.value === this.nativeInputValue) return;
+
+      this.$emit('input', event.target.value);
+
+      // set input's value, in case parent refuses the change
+      // see: https://github.com/ElemeFE/element/issues/12850
+      this.$nextTick(() => {
+        this.$refs.input.value = this.value;
+      });
     },
-
-    mounted() {
-      this.resizeTextarea();
-      this.updateIconOffset();
+    handleChange(event) {
+      this.$emit('change', event.target.value);
     },
+    calcIconOffset(place) {
+      let elList = [].slice.call(
+        this.$el.querySelectorAll(`.el-input__${place}`) || []
+      );
+      if (!elList.length) return;
+      let el = null;
+      for (let i = 0; i < elList.length; i++) {
+        if (elList[i].parentNode === this.$el) {
+          el = elList[i];
+          break;
+        }
+      }
+      if (!el) return;
+      const pendantMap = {
+        suffix: 'append',
+        prefix: 'prepend'
+      };
 
-    updated() {
-      this.$nextTick(this.updateIconOffset);
+      const pendant = pendantMap[place];
+      if (this.$slots[pendant]) {
+        el.style.transform = `translateX(${place === 'suffix' ? '-' : ''}${
+          this.$el.querySelector(`.el-input-group__${pendant}`).offsetWidth
+        }px)`;
+      } else {
+        el.removeAttribute('style');
+      }
+    },
+    updateIconOffset() {
+      this.calcIconOffset('prefix');
+      this.calcIconOffset('suffix');
+    },
+    clear() {
+      this.$emit('input', '');
+      this.$emit('change', '');
+      this.$emit('clear');
     }
-  };
+  },
+
+  created() {
+    this.$on('inputSelect', this.select);
+  },
+
+  mounted() {
+    this.resizeTextarea();
+    this.updateIconOffset();
+
+    if (this.autofocus) {
+      const ref =
+        this.type === 'textarea' ? this.$refs.textarea : this.$refs.input;
+      ref && ref.focus();
+    }
+  },
+
+  updated() {
+    this.$nextTick(this.updateIconOffset);
+  }
+};
 </script>

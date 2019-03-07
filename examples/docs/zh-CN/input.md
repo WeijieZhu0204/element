@@ -195,7 +195,7 @@
 :::demo
 
 ```html
-<el-input v-model="input" placeholder="请输入内容"></el-input>
+<el-input v-model="input" placeholder="请输入内容" autofocus></el-input>
 
 <script>
   export default {
