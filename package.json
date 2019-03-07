@@ -1,6 +1,6 @@
 {
   "name": "@weijiezhu/element-ui",
-  "version": "2.4.18",
+  "version": "2.4.19",
   "description": "A Component Library for Vue.js.",
   "main": "lib/element-ui.common.js",
   "files": [
