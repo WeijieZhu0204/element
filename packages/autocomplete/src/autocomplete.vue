@@ -89,6 +89,7 @@ export default {
     },
     popperClass: String,
     popperOptions: Object,
+    suggestionOptions: Object,
     placeholder: String,
     clearable: {
       type: Boolean,
@@ -151,11 +152,21 @@ export default {
     suggestionVisible(val) {
       this.broadcast('ElAutocompleteSuggestions', 'visible', [
         val,
-        this.$refs.input.$refs.input.offsetWidth
+        this.getSuggestionWidth()
       ]);
     }
   },
   methods: {
+    getSuggestionWidth() {
+      const offsetWidth = this.$refs.input.$refs.input.offsetWidth;
+      if (this.suggestionOptions) {
+        const minWidth = parseInt(this.suggestionOptions.minWidth, 10);
+        if (minWidth) {
+          return Math.max(minWidth, offsetWidth);
+        }
+      }
+      return offsetWidth;
+    },
     getLabel(item) {
       if (item.hasOwnProperty('label')) {
         return item.label;

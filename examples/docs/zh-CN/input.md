@@ -473,6 +473,7 @@
     <el-autocomplete
       class="inline-input"
       v-model="state1"
+      :suggestion-options="{minWidth:200}"
       :fetch-suggestions="querySearch"
       placeholder="请输入内容"
       @blur="handleBlur"
