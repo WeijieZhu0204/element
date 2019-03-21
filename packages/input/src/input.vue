@@ -289,7 +289,7 @@ export default {
       // set input's value, in case parent refuses the change
       // see: https://github.com/ElemeFE/element/issues/12850
       this.$nextTick(() => {
-        this.$refs.input.value = this.value;
+        (this.$refs.input || this.$refs.textarea).value = this.value;
       });
     },
     handleChange(event) {
