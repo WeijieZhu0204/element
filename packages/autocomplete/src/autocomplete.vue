@@ -217,7 +217,7 @@ export default {
     handleFocus(event) {
       this.activated = true;
       this.$emit('focus', event);
-      if (this.triggerOnFocus) {
+      if (this.triggerOnFocus && this.debouncedGetData) {
         this.debouncedGetData(this.value);
       }
     },
@@ -298,8 +298,10 @@ export default {
         );
     }
   },
-  mounted() {
+  created() {
     this.debouncedGetData = debounce(this.debounce, this.getData);
+  },
+  mounted() {
     this.$on('item-click', item => {
       this.select(item);
     });
